@@ -3,17 +3,22 @@
 #include <iostream>
 #include <iomanip>
 
+//Create matrix with integer array from user input string
+//Will accept up to 256 integers and will ignore any remainders
 matrix::matrix(std::stringstream& inputstream)
 	:
 	data(), size()
 {
 	int streamSize;
 	int temp;
-	int store[1024];
+	int store[256];
 	int capacity = 0;
-	for (streamSize = 0; streamSize < 1024; streamSize++) {
+	for (streamSize = 0; streamSize < 256; streamSize++) {
 		if (inputstream >> temp) { //integer filter
-			store[streamSize] = temp;
+			//Clamp to grayscale range 0...255
+			if (temp > 255) { temp = 255;} 
+			else if(temp < 0) { temp = 0;}
+ 			store[streamSize] = temp;
 			capacity++;
 		}
 	}
@@ -33,10 +38,16 @@ matrix::matrix(std::stringstream& inputstream)
 	}
 }
 
-matrix::matrix(matrix* copy)
+//Copy constructor, deep copy of matrix data
+matrix::matrix(const matrix* copy)
 	:
-	data(), size(copy->size)
+	data(), size()
 {
+	if (copy == NULL) {
+		std::cerr << "Constructor: Copy matrix returned NULL.\n";
+		return;
+	}
+	size = copy->size;
 	data = new int[size];
 	dimension = sqrt(size);
 	for (int i = 0; i < size; i++) {
@@ -47,35 +58,25 @@ matrix::matrix(matrix* copy)
 	}
 }
 
-matrix::matrix(int capacity) 
-	:
-	data(), size(capacity)
-{
-	if (0 <= size <= 1024) {
-		data = new int[size];
-	}
-	if (data == NULL) {
-		std::cerr << "Warning: unable to find memory for data.\n";
-	}
-}
-
+//Free allocated memory
 matrix::~matrix()
 {
 	delete data;
 }
 
-int matrix::getSize()
+int matrix::getSize() const
 {
 	return size;
 }
 
-int matrix::getDimension()
+int matrix::getDimension() const
 {
 	return dimension;
 }
 
-//GetSet works on 0....dimension-1 
-int matrix::getAt(int row, int col)
+//GetSet functions convert 2D coordinates to 1D.
+//Return grayscale value at data[row, col]
+int matrix::getAt(const int row, const int col) const
 {
 	if (data == NULL) {
 		std::cerr << "Get: Data inaccessible.\n";
@@ -91,7 +92,8 @@ int matrix::getAt(int row, int col)
 	}
 }
 
-void matrix::setAt(int row, int col, int value)
+//Set grayscale value at data[row, col] to value
+void matrix::setAt(const int row, const int col, const int value)
 {
 	if (data == NULL) {
 		std::cerr << "Set: Data inaccessible.\n";
@@ -106,23 +108,29 @@ void matrix::setAt(int row, int col, int value)
 	}
 }
 
-void matrix::turnOn(int row, int col)
+//turnOn/Off are higher level functions of Get/Set
+//Flip a pixel on or off
+void matrix::turnOn(const int row, const int col)
 {
 	setAt(row, col, 1);
 	return;
 }
 
-void matrix::turnOff(int row, int col)
+void matrix::turnOff(const int row, const int col)
 {
 	setAt(row, col, 0);
 	return;
 }
 
-//rescale from 256 to 0...range
-void matrix::rescale(int range)
+//rescale from 0...256 to 0...range
+void matrix::rescale(const int range)
 {
 	if (data == NULL) {
 		std::cerr << "Rescale: Data inaccessible.\n";
+		return;
+	}
+	if (range < 0) {
+		std::cerr << "Rescale: Invalid range.\n";
 		return;
 	}
 	for (int i = 0; i < size; i++) {
@@ -132,13 +140,14 @@ void matrix::rescale(int range)
 	return;
 }
 
-void matrix::orderedDither(matrix* ditherMatrix)
+// Ordered dither operation on this matrix's data
+void matrix::orderedDither(const matrix* ditherMatrix)
 {
 	if (ditherMatrix == NULL) {
 		std::cerr << "Ordered Dither: Could not find dither matrix.\n";
 		return;
 	}
-	rescale(4);
+	rescale(4); //range specified for assignment
 	for (int row = 0; row < dimension; row++) {
 		for (int col = 0; col < dimension; col++) {
 			//relative positions
@@ -155,23 +164,27 @@ void matrix::orderedDither(matrix* ditherMatrix)
 	return;
 }
 
-void matrix::halftonePrint(matrix* ditherMatrix)
+//Halftone printing operation on this matrix's data
+void matrix::halftonePrint(const matrix* ditherMatrix)
 {
 	const int scaleFactor = ditherMatrix->dimension;
 	if (ditherMatrix == NULL) {
 		std::cerr << "Halftone Print: Could not find dither matrix.\n";
 		return;
 	}
-	rescale(4);
+	rescale(4); //range specified for assignment
 
 	int scaledSize = size * ditherMatrix->size;
-	int* scaledData = new int[scaledSize];
+	int* scaledData = new int[scaledSize];	//create a larger scaled int array to replace old one
 	int scaledDimension = dimension * scaleFactor;
 
 	if (scaledData == NULL) {
 		std::cerr << "Halftone Print: Error creating scaled data.\n";
 		return;
 	}
+	//For each pixel in the old data array, compare to dither matrix
+	//If data pixel is greater, then turn on corresponding pixel in scaled data array
+	//Else turn off corresponding pixel in scaled data array
 	for (int row = 0; row < dimension; row++) {
 		for (int col = 0; col < dimension; col++) {
 			int scaledRow = row * scaleFactor;
@@ -210,8 +223,8 @@ void matrix::halftonePrint(matrix* ditherMatrix)
 	return;
 }
 
-//coordinate: xRow + yColumn
-void matrix::print()
+//Prints data contents to console
+void matrix::print() const
 {
 	if (data == NULL) {
 		std::cerr << "Print: Data inaccessible.\n";
@@ -224,7 +237,7 @@ void matrix::print()
 				std::cout << std::setw(3) << data[(row * dimension) + col] << "]\n";
 			}
 			else {
-				std::cout << std::setw(3) << data[(row * dimension) + col] << ", ";
+				std::cout << std::setw(3) << data[(row * dimension) + col] << " ";
 			}
 		}
 	}

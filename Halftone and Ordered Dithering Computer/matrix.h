@@ -1,25 +1,27 @@
 #pragma once
 #include <sstream>
+/*
+	Stores integer array up to 256 elements (exception: halftone print scaling) representing image.
+	Member functions manipulate and display integer array.
+*/
 
 class matrix
 {
 public:
 	matrix(std::stringstream& inputstream);
-	matrix(matrix* copy);
-	matrix(int capacity);
+	matrix(const matrix* copy);
 	~matrix();
-	int getSize();
-	int getDimension();
-	int getAt(int row, int col);
-	void setAt(int row, int col, int value);
-	void turnOn(int row, int col);
-	void turnOff(int row, int col);
+	int getSize() const;
+	int getDimension() const;
+	int getAt(const int row, const int col) const;
+	void setAt(const int row, const int col, const int value);
 
-	void rescale(int range);
-	void orderedDither(matrix* ditherMatrix);
-	void halftonePrint(matrix* ditherMatrix);
-	void print();
-
+	void turnOn(const int row, const int col);
+	void turnOff(const int row, const int col);
+	void rescale(const int range);
+	void orderedDither(const matrix* ditherMatrix);
+	void halftonePrint(const matrix* ditherMatrix);
+	void print() const;
 private:
 	int* data;
 	int size = 0;
