@@ -22,15 +22,23 @@ int main()
         else {
             std::stringstream inputstream(input);
             matrix* inputMatrix = new matrix(inputstream);
+            matrix* copyMatrix = new matrix(inputMatrix);
+            matrix* rescaleMat = new matrix(inputMatrix);
             std::cout << "Input: \n";
             inputMatrix->print();
-           // std::cout << "Rescale: \n";
-            //inputMatrix->rescale(4);
-            inputMatrix->orderedDither(ditherMatrix);
+            std::cout << "Rescale: \n";
+            rescaleMat->rescale(4);
+            rescaleMat->print();
+            std::cout << "Halftone Printing: \n";
+            copyMatrix->halftonePrint(ditherMatrix);
+            copyMatrix->print();
             std::cout << "Ordered Dithering: \n";
+            inputMatrix->orderedDither(ditherMatrix);
             inputMatrix->print();
 
             delete inputMatrix;
+            delete copyMatrix;
+            delete rescaleMat;
         }
     }
     delete ditherMatrix;

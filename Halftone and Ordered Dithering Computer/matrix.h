@@ -6,6 +6,7 @@ class matrix
 public:
 	matrix(std::stringstream& inputstream);
 	matrix(matrix* copy);
+	matrix(int capacity);
 	~matrix();
 	int getSize();
 	int getDimension();

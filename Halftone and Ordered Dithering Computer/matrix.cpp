@@ -47,6 +47,18 @@ matrix::matrix(matrix* copy)
 	}
 }
 
+matrix::matrix(int capacity) 
+	:
+	data(), size(capacity)
+{
+	if (0 <= size <= 1024) {
+		data = new int[size];
+	}
+	if (data == NULL) {
+		std::cerr << "Warning: unable to find memory for data.\n";
+	}
+}
+
 matrix::~matrix()
 {
 	delete data;
@@ -122,6 +134,10 @@ void matrix::rescale(int range)
 
 void matrix::orderedDither(matrix* ditherMatrix)
 {
+	if (ditherMatrix == NULL) {
+		std::cerr << "Ordered Dither: Could not find dither matrix.\n";
+		return;
+	}
 	rescale(4);
 	for (int row = 0; row < dimension; row++) {
 		for (int col = 0; col < dimension; col++) {
@@ -141,7 +157,57 @@ void matrix::orderedDither(matrix* ditherMatrix)
 
 void matrix::halftonePrint(matrix* ditherMatrix)
 {
+	const int scaleFactor = ditherMatrix->dimension;
+	if (ditherMatrix == NULL) {
+		std::cerr << "Halftone Print: Could not find dither matrix.\n";
+		return;
+	}
+	rescale(4);
 
+	int scaledSize = size * ditherMatrix->size;
+	int* scaledData = new int[scaledSize];
+	int scaledDimension = dimension * scaleFactor;
+
+	if (scaledData == NULL) {
+		std::cerr << "Halftone Print: Error creating scaled data.\n";
+		return;
+	}
+	for (int row = 0; row < dimension; row++) {
+		for (int col = 0; col < dimension; col++) {
+			int scaledRow = row * scaleFactor;
+			int scaledCol = col * scaleFactor;
+			if (getAt(row, col) > ditherMatrix->getAt(0, 0)) {
+				scaledData[scaledRow * scaledDimension + scaledCol] = 1;
+			}
+			else {
+				scaledData[scaledRow * scaledDimension + scaledCol] = 0;
+			}
+			if (getAt(row, col) > ditherMatrix->getAt(0, 1)) {
+				scaledData[scaledRow * scaledDimension + scaledCol+1] = 1;
+			}
+			else {
+				scaledData[scaledRow * scaledDimension + scaledCol + 1] = 0;
+			}
+			if (getAt(row, col) > ditherMatrix->getAt(1, 0)) {
+				scaledData[(scaledRow+1) * scaledDimension + scaledCol] = 1;
+			}
+			else {
+				scaledData[(scaledRow + 1) * scaledDimension + scaledCol] = 0;
+			}
+			if (getAt(row, col) > ditherMatrix->getAt(1, 1)) {
+				scaledData[(scaledRow+1) * scaledDimension + scaledCol+1] = 1;
+			}
+			else {
+				scaledData[(scaledRow + 1) * scaledDimension + scaledCol + 1] = 0;
+			}
+		}
+	}
+
+	delete data;
+	data = scaledData;
+	size = scaledSize;
+	dimension = scaledDimension;
+	return;
 }
 
 //coordinate: xRow + yColumn
